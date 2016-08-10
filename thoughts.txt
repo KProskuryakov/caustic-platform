@@ -1,0 +1,4 @@
+What's the game about?
+
+Let's start with a simplistic vvvvvv clone
+

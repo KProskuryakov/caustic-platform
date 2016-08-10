@@ -5,6 +5,11 @@ local player = {
   velY = 0
 }
 
+function player:new (o)
+  
+end
+
+
 function player:load (startPos)
   self.image = love.graphics.newImage('player')
   self.x = startPos.x

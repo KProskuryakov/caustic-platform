@@ -1,7 +1,7 @@
 local keybinds = {
   moveLeft = 'a', 
   moveRight = 'd',
-  jump = 'space'
+  jump = 'rshift'
 }
 
 return keybinds
