@@ -1,3 +1,14 @@
 What's the game about?
 
 Let's start with a simplistic vvvvvv clone
+
+Maybe something a bit better
+
+Current collision rules that I would like to do
+
+Basic:
+Standing and running on the ground.
+Jumping, moving in the air while jumping
+Grip walls when you press the arrow against them
+You can climb walls by holding jump and going left/right
+You can also grip and slide on ceilings by holding jump
