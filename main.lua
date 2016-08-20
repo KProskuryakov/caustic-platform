@@ -3,17 +3,21 @@ local bump
 local player
 local world
 local level
+local Camera, camera
 
 function love.load ()
   -- set the background color to light grey
-  love.graphics.setBackgroundColor(235, 235, 235)
+  love.graphics.setBackgroundColor(255, 255, 255)
   
   -- get the keybinds from the keybinds file
   keybinds = require 'keybinds'
   
   -- uses the bump.lua library
-  bump = require 'bump'
+  bump = require 'bump.bump'
   world = bump.newWorld()
+  
+  -- uses the HUMP camera module
+  Camera = require 'hump.camera'
   
   -- create the player
   player = {
@@ -31,7 +35,7 @@ function love.load ()
     walls = {
       {x=0, y=296, w=583, h=39}, 
       {x=608, y=262, w=36, h=36},
-      {x=95, y=225, w=49, h=67},
+      {x=95, y=228, w=49, h=67},
       {x=209, y=173, w=74, h=45},
       {x=350, y=101, w=54, h=195},
       {x=533, y=335, w=50, h=80},
@@ -49,6 +53,9 @@ function love.load ()
   -- set the player's position to the start position of the level
   player.x, player.y = level.startX, level.startY
   world:update(player, level.startX, level.startY)
+  
+  camera = Camera(player.x, player.y)
+  camera.smoother = Camera.smooth.damped(5)
 end -- love.load
 
 function love.update (dt)
@@ -78,12 +85,17 @@ function love.update (dt)
   for i=1,len do
     print('collided with ' .. tostring(cols[i].other))
   end
+  
+  camera:lockPosition(player.x + player.imagew/2, player.y + player.imageh/2)
 end
 
 function love.draw ()
+  camera:attach()
   love.graphics.setColor(255, 255, 255)
   love.graphics.draw(level.image, 0, 0)
   love.graphics.draw(player.image, player.x, player.y)
+  camera:detach()
+  
   love.graphics.setColor(0, 0, 0)
   love.graphics.print("FPS: " .. love.timer.getFPS(), 750, 10)
 end
