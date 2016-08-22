@@ -1,23 +1,20 @@
-local keybinds
-local bump
+local tactile, keybinds, control
 local player
-local world
+local bump, bumpWorld
 local level
-local Camera, camera
+local graphics
+local humpCamera, gameCamera
 
 function love.load ()
-  -- set the background color to light grey
-  love.graphics.setBackgroundColor(255, 255, 255)
+  graphics = love.graphics
+  graphics.setBackgroundColor(255, 255, 255) -- set the background color to white
   
-  -- get the keybinds from the keybinds file
-  keybinds = require 'keybinds'
-  
-  -- uses the bump.lua library
-  bump = require 'bump.bump'
-  world = bump.newWorld()
+  -- uses the bump.lua library for collision detection
+  bump = require 'lib.bump.bump'
+  bumpWorld = bump.newWorld()
   
   -- uses the HUMP camera module
-  Camera = require 'hump.camera'
+  humpCamera = require 'lib.hump.camera'
   
   -- create the player
   player = {
@@ -27,7 +24,7 @@ function love.load ()
     gravity = 1024, terminalVelocity = 512, jumpVelocity = -512, runSpeed = 128
   }
   
-  world:add(player, player.x, player.y, player.w, player.h)
+  bumpWorld:add(player, player.x, player.y, player.w, player.h)
   
   -- create the level
   level = {
@@ -47,37 +44,39 @@ function love.load ()
   }
   
   for i, wall in ipairs(level.walls) do
-    world:add(wall, wall.x, wall.y, wall.w, wall.h)
+    bumpWorld:add(wall, wall.x, wall.y, wall.w, wall.h)
   end
   
   -- set the player's position to the start position of the level
   player.x, player.y = level.startX, level.startY
-  world:update(player, level.startX, level.startY)
+  bumpWorld:update(player, level.startX, level.startY)
   
-  camera = Camera(player.x, player.y)
-  camera.smoother = Camera.smooth.damped(5)
+  gameCamera = humpCamera(player.x, player.y)
+  gameCamera.smoother = humpCamera.smooth.damped(5)
+  
+  tactile = require 'lib.tactile.tactile' -- tactile library for inputs
+  keybinds = require 'keybinds' -- get the keybinds from the keybinds file
+  control = {
+    horizontal = tactile.newControl():addButtonPair(tactile.keys(keybinds.moveLeft), tactile.keys(keybinds.moveRight)),
+    jump = tactile.newControl():addButton(tactile.keys(keybinds.jump))
+  }
 end -- love.load
 
 function love.update (dt)
+  control.horizontal:update()
+  control.jump:update()
+  
   -- process the keybinds for the player
-  if love.keyboard.isDown(keybinds.moveLeft) then
-    player.vx = -player.runSpeed
-  elseif love.keyboard.isDown(keybinds.moveRight) then
-    player.vx = player.runSpeed
-  else
-    player.vx = 0
-  end -- l/r movement
-  if love.keyboard.isDown(keybinds.jump) then
-    if player.onGround then
-      player.vy = player.jumpVelocity
-    end
+  player.vx = player.runSpeed * control.horizontal() -- l/r movement
+  if control.jump:isDown() and player.onGround then -- jump
+    player.vy = player.jumpVelocity
   end -- jump
   
   -- increases the player's falling speed up to a terminal velocity value
   player.vy = math.min(player.vy + player.gravity * dt, player.terminalVelocity)
   
   local goalX, goalY = player.x + player.vx * dt, player.y + player.vy * dt
-  local actualX, actualY, cols, len = world:move(player, goalX, goalY)
+  local actualX, actualY, cols, len = bumpWorld:move(player, goalX, goalY)
   player.onGround = player.y == actualY
   player.x, player.y = actualX, actualY
   
@@ -86,16 +85,16 @@ function love.update (dt)
     print('collided with ' .. tostring(cols[i].other))
   end
   
-  camera:lockPosition(player.x + player.imagew/2, player.y + player.imageh/2)
+  gameCamera:lockPosition(player.x + player.imagew/2, player.y + player.imageh/2)
 end
 
 function love.draw ()
-  camera:attach()
-  love.graphics.setColor(255, 255, 255)
-  love.graphics.draw(level.image, 0, 0)
-  love.graphics.draw(player.image, player.x, player.y)
-  camera:detach()
+  gameCamera:attach()
+  graphics.setColor(255, 255, 255)
+  graphics.draw(level.image, 0, 0)
+  graphics.draw(player.image, player.x, player.y)
+  gameCamera:detach()
   
-  love.graphics.setColor(0, 0, 0)
-  love.graphics.print("FPS: " .. love.timer.getFPS(), 750, 10)
+  graphics.setColor(0, 0, 0)
+  graphics.print("FPS: " .. love.timer.getFPS(), 750, 10)
 end
